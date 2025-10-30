@@ -1,5 +1,12 @@
 --liquibase formatted sql
 
+--changeset alabuga-team:003-drop-fk-before-uuid
+--comment: Drop FK and index before altering column types to UUID
+ALTER TABLE short_links 
+DROP CONSTRAINT IF EXISTS fk_short_links_user_id;
+
+DROP INDEX IF EXISTS idx_short_links_user_id;
+
 --changeset alabuga-team:003-migrate-to-uuid-users
 --comment: Миграция таблицы users: id из VARCHAR в UUID
 ALTER TABLE users 
@@ -9,6 +16,15 @@ ALTER COLUMN id TYPE UUID USING id::UUID;
 --comment: Миграция таблицы short_links: user_id из VARCHAR в UUID
 ALTER TABLE short_links 
 ALTER COLUMN user_id TYPE UUID USING user_id::UUID;
+
+--changeset alabuga-team:003-recreate-fk-after-uuid
+--comment: Recreate FK and index after types are aligned to UUID
+ALTER TABLE short_links 
+ADD CONSTRAINT fk_short_links_user_id 
+FOREIGN KEY (user_id) REFERENCES users(id) 
+ON DELETE CASCADE ON UPDATE CASCADE;
+
+CREATE INDEX IF NOT EXISTS idx_short_links_user_id ON short_links(user_id);
 
 --changeset alabuga-team:003-add-user-fields
 --comment: Добавление дополнительных полей пользователя
